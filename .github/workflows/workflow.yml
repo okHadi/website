@@ -5,8 +5,6 @@ name: CI
 # Controls when the workflow will run
 on:
   # Triggers the workflow on pull request event but only for the "main" branch
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -23,35 +21,26 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - name: Bash
+      - name: Bash script
         run: |
           firstline=$(sed '1q;d' README.md);
           secondline=$(sed '2q;d' README.md);
-          firstLineChar=${firstline:0:1};
-          secondLineChar=${secondline:0:1};
-          echo $firstLineChar;
-          echo $secondLineChar;
-          if [ "$firstLineChar" == "#" ]; then echo '::set-output name=titleResult::True' ; else echo '::set-output name=titleResult::False' ; fi;
-          if [ -n "$secondLineChar" ]; then echo '::set-output name=desResult::True'; else echo '::set-output name=desResult::False'; fi;
-          echo
+          firstLineLetter=${firstline%% *}
+          secondLineLetter=${secondline%% *} 
+          if [ "$firstLineLetter" == "title:" ]; then echo '::set-output name=titleResult::True' ; else echo '::set-output name=titleResult::False' ; fi;
+          if [ "$secondLineLetter" == "description:" ]; then echo '::set-output name=desResult::True'; else echo '::set-output name=desResult::False'; fi;
           arr=();
           while IFS= read -r line; do arr+=(${#line}) ; done < README.md;
           echo ${arr[0]};
-          if [[ "${arr[0]}" -le 70 && "${arr[0]}" -ge 50 ]]; then echo '::set-output name=titleLenGood::True'; else echo '::set-output name=titleLenGood::False'; fi;
-          unset arr[0];
-          total=0;
-          for i in ${arr[@]}; do
-          let total+=$i;
-          done;
-          if [[ ${total} -le 170 && ${total} -ge 140 ]]; then echo '::set-output name=descLenGood::True'; else echo '::set-output name=desLenGood::False'; fi;
+          if [[ $((${arr[0]} - 6)) -le 70 && $((${arr[0]} - 6)) -ge 50 ]]; then echo '::set-output name=titleLenGood::True'; else echo '::set-output name=titleLenGood::False'; fi;
+          if [[ $((${arr[1]} - 12)) -le 170 && $((${arr[1]} - 12)) -ge 140 ]]; then echo '::set-output name=descLenGood::True'; else echo '::set-output name=desLenGood::False'; fi;
         id: script
 
-      - name: Check if for heading length
+      - name: Check for heading length
         run: |
           if [[ ${{ steps.script.outputs.titleResult }} == True && ${{ steps.script.outputs.titleLenGood }} == False ]] ;
           then exit 1; fi ;
-
-      - name: Check if for description length
+      - name: Check for description length
         run: |
           if [ ${{ steps.script.outputs.desResult }} == True && ${{ steps.script.outputs.descLenGood }} == False ];
           then exit 1; fi ;
