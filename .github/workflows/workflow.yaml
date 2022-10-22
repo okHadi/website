@@ -48,5 +48,5 @@ jobs:
           then exit 1; fi ;
       - name: Check for description length
         run: |
-          if [ ${{ steps.script.outputs.desResult }} == True && ${{ steps.script.outputs.descLenGood }} == False ];
+          if [[ ${{ steps.script.outputs.desResult }} == True && ${{ steps.script.outputs.descLenGood }} == False ]];
           then exit 1; fi ;

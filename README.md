@@ -1,4 +1,4 @@
-title : This check should fail
+title: This check should fail
 description: This should also fail failed
 
 # Tilburg Science Hub
