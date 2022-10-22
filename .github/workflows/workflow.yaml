@@ -29,14 +29,14 @@ jobs:
         if: ${{ steps.checkmd.outputs.mdchanged }}
         id: script
         run: |
-          firstline=$(sed '1q;d' $GITHUB_MD_FILE_CHANGED);
-          secondline=$(sed '2q;d' $GITHUB_MD_FILE_CHANGED);
+          firstline=$(sed '1q;d' README.MD);
+          secondline=$(sed '2q;d' README.MD);
           firstLineLetter=${firstline%% *}
           secondLineLetter=${secondline%% *} 
           if [ "$firstLineLetter" == "title:" ]; then echo '::set-output name=titleResult::True' ; else echo '::set-output name=titleResult::False' ; fi;
           if [ "$secondLineLetter" == "description:" ]; then echo '::set-output name=desResult::True'; else echo '::set-output name=desResult::False'; fi;
           arr=();
-          while IFS= read -r line; do arr+=(${#line}) ; done < $GITHUB_MD_FILE_CHANGED;
+          while IFS= read -r line; do arr+=(${#line}) ; done < README.MD;
           echo ${arr[0]};
           if [[ $((${arr[0]} - 6)) -le 70 && $((${arr[0]} - 6)) -ge 50 ]]; then echo '::set-output name=titleLenGood::True'; else echo '::set-output name=titleLenGood::False'; fi;
           if [[ $((${arr[1]} - 12)) -le 170 && $((${arr[1]} - 12)) -ge 140 ]]; then echo '::set-output name=descLenGood::True'; else echo '::set-output name=desLenGood::False'; fi;
