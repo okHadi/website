@@ -1,0 +1,50 @@
+name: Extract and test MD File
+on: [pull_request]
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: get pr number
+        run: echo GITHUB_PR_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')>> $GITHUB_ENV
+        shell: bash
+      - name: Check if .md file was updated in this Pull Request
+        run: echo "GITHUB_MD_FILE_CHANGED=$(gh pr view $GITHUB_PR_NUMBER --json files --jq '.files.[].path' | grep -i '.md')" >> $GITHUB_ENV
+      - name: test
+        run: |
+          echo $GITHUB_MD_FILE_CHANGED
+          echo $GITHUB_PR_NUMBER
+      - name: Check if md file changed
+        id: checkmd
+        shell: bash
+        run: |
+          if [ "$GITHUB_MD_FILE_CHANGED" == "" ]; then
+            echo ::set-output name=mdchanged::false
+          else
+            echo ::set-output name=mdchanged::true
+          fi
+      - name: Bash script
+        if: ${{ steps.checkmd.outputs.mdchanged }}
+        id: script
+        run: |
+          firstline=$(sed '1q;d' $GITHUB_MD_FILE_CHANGED);
+          secondline=$(sed '2q;d' $GITHUB_MD_FILE_CHANGED);
+          firstLineLetter=${firstline%% *}
+          secondLineLetter=${secondline%% *} 
+          if [ "$firstLineLetter" == "title:" ]; then echo '::set-output name=titleResult::True' ; else echo '::set-output name=titleResult::False' ; fi;
+          if [ "$secondLineLetter" == "description:" ]; then echo '::set-output name=desResult::True'; else echo '::set-output name=desResult::False'; fi;
+          arr=();
+          while IFS= read -r line; do arr+=(${#line}) ; done < $GITHUB_MD_FILE_CHANGED;
+          echo ${arr[0]};
+          if [[ $((${arr[0]} - 6)) -le 70 && $((${arr[0]} - 6)) -ge 50 ]]; then echo '::set-output name=titleLenGood::True'; else echo '::set-output name=titleLenGood::False'; fi;
+          if [[ $((${arr[1]} - 12)) -le 170 && $((${arr[1]} - 12)) -ge 140 ]]; then echo '::set-output name=descLenGood::True'; else echo '::set-output name=desLenGood::False'; fi;
+      - name: Check for heading length
+        run: |
+          if [[ ${{ steps.script.outputs.titleResult }} == True && ${{ steps.script.outputs.titleLenGood }} == False ]] ;
+          then exit 1; fi ;
+      - name: Check for description length
+        run: |
+          if [ ${{ steps.script.outputs.desResult }} == True && ${{ steps.script.outputs.descLenGood }} == False ];
+          then exit 1; fi ;
